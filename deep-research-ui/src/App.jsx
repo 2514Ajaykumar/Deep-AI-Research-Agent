@@ -10,26 +10,18 @@ function App() {
     if (!query) return;
 
     setLoading(true);
-    setResponse("");
+    setResponse("🔍 Researching...");
 
     try {
-      const res = await sendQuery(query);
+      // ✅ NOW sendQuery already returns FINAL RESULT
+      const result = await sendQuery(query);
 
-      console.log("FULL RESPONSE:", res);
+      console.log("✅ FINAL RESULT:", result);
 
-      const output =
-        res?.output?.final_answer ||
-        res?.output ||
-        JSON.stringify(res, null, 2);
-
-      setResponse(
-        typeof output === "string"
-          ? output
-          : JSON.stringify(output, null, 2)
-      );
-
+      setResponse(result);
     } catch (err) {
-      setResponse("Error occurred");
+      console.error(err);
+      setResponse("❌ Error occurred");
     }
 
     setLoading(false);

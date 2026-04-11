@@ -1,27 +1,53 @@
 const BASE_URL = "http://localhost:5000";
 
 let THREAD_CREATED = false;
+let THREAD_ID = null;
 
+// ===============================
+// ✅ POLLING FUNCTION
+// ===============================
+const pollResult = async (threadId, runId) => {
+  while (true) {
+    const res = await fetch(`${BASE_URL}/api/run/${threadId}/${runId}`);
+    const data = await res.json();
+
+    console.log("🔄 Polling:", data);
+
+    if (data.status === "success") {
+      return data.output; // ✅ STOP polling
+    }
+
+    if (data.status === "error") {
+      throw new Error("Run failed");
+    }
+
+    await new Promise((r) => setTimeout(r, 2000));
+  }
+};
+
+// ===============================
+// ✅ MAIN FUNCTION
+// ===============================
 export const sendQuery = async (query) => {
   try {
-    // Step 1: create thread once
+    // 1. Create thread once
     if (!THREAD_CREATED) {
       const threadRes = await fetch(`${BASE_URL}/api/thread`, {
         method: "POST",
       });
 
       const threadData = await threadRes.json();
-      console.log("THREAD CREATED:", threadData);
 
       if (!threadRes.ok) {
-        throw new Error(threadData.error || "Thread creation failed");
+        throw new Error(threadData.error);
       }
 
       THREAD_CREATED = true;
+      THREAD_ID = threadData.thread_id;
     }
 
-    // Step 2: send query
-    const response = await fetch(`${BASE_URL}/api/run`, {
+    // 2. Run query
+    const runRes = await fetch(`${BASE_URL}/api/run`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -29,17 +55,19 @@ export const sendQuery = async (query) => {
       body: JSON.stringify({ query }),
     });
 
-    const data = await response.json();
-    console.log("API RESPONSE:", data);
+    const runData = await runRes.json();
 
-    if (!response.ok) {
-      throw new Error(data.error || "Run failed");
+    if (!runRes.ok) {
+      throw new Error(runData.error);
     }
 
-    return data;
+    // 3. Poll result
+    const result = await pollResult(THREAD_ID, runData.run_id);
+
+    return result;
 
   } catch (err) {
-    console.error("API ERROR:", err);
+    console.error("❌ API ERROR:", err);
     throw err;
   }
 };

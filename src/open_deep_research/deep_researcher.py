@@ -666,8 +666,13 @@ async def final_report_generation(state: AgentState, config: RunnableConfig):
             # Return successful report generation
             return {
                 "final_report": final_report.content, 
-                "messages": [final_report],
-                **cleared_state
+                # "messages": [final_report],
+                "messages": [
+                {
+                    "role": "assistant",
+                    "content": final_report.content
+                }
+            ],
             }
             
         except Exception as e:
@@ -681,8 +686,10 @@ async def final_report_generation(state: AgentState, config: RunnableConfig):
                     if not model_token_limit:
                         return {
                             "final_report": f"Error generating final report: Token limit exceeded, however, we could not determine the model's maximum context length. Please update the model map in deep_researcher/utils.py with this information. {e}",
-                            "messages": [AIMessage(content="Report generation failed due to token limits")],
-                            **cleared_state
+                            # "messages": [AIMessage(content="Report generation failed due to token limits")],
+                            "messages": [
+                                {"role": "assistant", "content": "Report generation failed"}
+                            ],
                         }
                     # Use 4x token limit as character approximation for truncation
                     findings_token_limit = model_token_limit * 4
@@ -697,15 +704,17 @@ async def final_report_generation(state: AgentState, config: RunnableConfig):
                 # Non-token-limit error: return error immediately
                 return {
                     "final_report": f"Error generating final report: {e}",
-                    "messages": [AIMessage(content="Report generation failed due to an error")],
-                    **cleared_state
+                    "messages": [
+                    {"role": "assistant", "content": "Report generation failed"}
+                ],
                 }
     
     # Step 4: Return failure result if all retries exhausted
     return {
         "final_report": "Error generating final report: Maximum retries exceeded",
-        "messages": [AIMessage(content="Report generation failed after maximum retries")],
-        **cleared_state
+        "messages": [
+            {"role": "assistant", "content": "Report generation failed"}
+        ],
     }
 
 # Main Deep Researcher Graph Construction
@@ -713,6 +722,7 @@ async def final_report_generation(state: AgentState, config: RunnableConfig):
 deep_researcher_builder = StateGraph(
     AgentState, 
     input=AgentInputState, 
+    output=AgentState,
     config_schema=Configuration
 )
 
