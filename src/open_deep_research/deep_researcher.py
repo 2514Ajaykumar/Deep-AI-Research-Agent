@@ -632,7 +632,14 @@ async def final_report_generation(state: AgentState, config: RunnableConfig):
     # Step 1: Extract research findings and prepare state cleanup
     notes = state.get("notes", [])
     cleared_state = {"notes": {"type": "override", "value": []}}
-    findings = "\n".join(notes)
+    notes = state.get("notes", [])
+    messages = state.get("messages", [])
+
+    # Fallback if notes are empty
+    if not notes:
+        findings = get_buffer_string(messages)
+    else:
+        findings = "\n".join(notes)
     
     # Step 2: Configure the final report generation model
     configurable = Configuration.from_runnable_config(config)
@@ -662,7 +669,7 @@ async def final_report_generation(state: AgentState, config: RunnableConfig):
             final_report = await get_model().with_config(writer_model_config).ainvoke([
                 HumanMessage(content=final_report_prompt)
             ])
-            
+            print("FINAL REPORT:", final_report.content)
             # Return successful report generation
             return {
                 "final_report": final_report.content, 
