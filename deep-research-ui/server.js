@@ -38,7 +38,7 @@ const parseResponse = async (response) => {
   try {
     return JSON.parse(text);
   } catch {
-    return { error: text };
+    return { raw: text };
   }
 };
 
@@ -121,7 +121,7 @@ app.post("/api/run", async (req, res) => {
 });
 
 // ===============================
-// ✅ GET RESULT (FINAL FIX)
+// ✅ GET RESULT (FINAL FIXED)
 // ===============================
 app.get("/api/run/:threadId/:runId", async (req, res) => {
   try {
@@ -142,32 +142,43 @@ app.get("/api/run/:threadId/:runId", async (req, res) => {
 
     let finalOutput = null;
 
-if (data.status === "success") {
-  console.log("✅ Run completed");
+    if (data.status === "success") {
+      console.log("✅ Run completed");
 
-  // 🔥 1. Try messages (if available)
-  if (data.values?.messages?.length > 0) {
-    finalOutput =
-      data.values.messages[data.values.messages.length - 1].content;
-  }
+      // ✅ CASE 1: New LangGraph output
+      if (data.output) {
+        finalOutput = data.output;
+      }
 
-  // 🔥 2. Try final_report (YOUR CASE ✅)
-  else if (data.values?.final_report) {
-    finalOutput = data.values.final_report;
-  }
+      // ✅ CASE 2: messages inside output
+      else if (data.output?.messages?.length > 0) {
+        finalOutput =
+          data.output.messages[data.output.messages.length - 1].content;
+      }
 
-  // 🔥 3. Try direct output
-  else if (data.output) {
-    finalOutput = data.output;
-  }
+      // ✅ CASE 3: values.messages (older format)
+      else if (data.values?.messages?.length > 0) {
+        finalOutput =
+          data.values.messages[data.values.messages.length - 1].content;
+      }
 
-  // 🔥 4. Fallback
-  else {
-    finalOutput = "⚠️ No readable output from agent";
-  }
+      // ✅ CASE 4: values.final_report
+      else if (data.values?.final_report) {
+        finalOutput = data.values.final_report;
+      }
 
-  console.log("📊 FINAL OUTPUT:", finalOutput);
-}
+      // ✅ CASE 5: fallback with query
+      else if (data.kwargs?.input?.query) {
+        finalOutput = `⚠️ Agent ran but returned no output.\n\nQuery: ${data.kwargs.input.query}`;
+      }
+
+      // ❌ FINAL fallback
+      else {
+        finalOutput = "⚠️ No readable output from agent";
+      }
+
+      console.log("📊 FINAL OUTPUT:", finalOutput);
+    }
 
     res.json({
       status: data.status,
