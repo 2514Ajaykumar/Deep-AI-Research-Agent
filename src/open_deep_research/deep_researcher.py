@@ -866,9 +866,7 @@ deep_researcher_builder.add_edge("research_supervisor", "final_report_generation
 deep_researcher_builder.add_edge("final_report_generation", END)                   # Final exit point
 
 # Compile the complete deep researcher workflow
-deep_researcher = deep_researcher_builder.compile(
-    interrupt_after=["final_report_generation"],
-)
+deep_researcher = deep_researcher_builder.compile()
 deep_researcher = deep_researcher.with_config({
     "output_keys": ["final_report", "messages"]
 })
