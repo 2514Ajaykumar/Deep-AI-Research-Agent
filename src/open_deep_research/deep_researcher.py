@@ -792,9 +792,8 @@ Write a detailed, well-structured, clear answer.
             return {
                 "final_report": output_text,
                 "messages": [
-                    AIMessage(content=output_text)   # ✅ proper format
-                ],
-                "output": output_text   # ⭐ THIS FIXES YOUR ISSUE
+                    AIMessage(content=output_text)
+                ]
             }
 
         except Exception as e:
@@ -812,8 +811,7 @@ Write a detailed, well-structured, clear answer.
                             "final_report": f"Token limit exceeded: {e}",
                             "messages": [
                                 AIMessage(content="Report generation failed")
-                            ],
-                            "output": f"Token limit exceeded: {e}"
+                            ]
                         }
 
                     findings_token_limit = model_token_limit * 4
@@ -833,8 +831,7 @@ Write a detailed, well-structured, clear answer.
                     "final_report": f"Error generating final report: {e}",
                     "messages": [
                         AIMessage(content="Report generation failed")
-                    ],
-                    "output": f"Error generating final report: {e}"
+                    ]
                 }
 
     # ===============================
@@ -844,8 +841,7 @@ Write a detailed, well-structured, clear answer.
         "final_report": "Error generating final report: Maximum retries exceeded",
         "messages": [
             AIMessage(content="Report generation failed")
-        ],
-        "output": "Error generating final report: Maximum retries exceeded"
+        ]
     }
 
 # Main Deep Researcher Graph Construction
@@ -865,11 +861,12 @@ deep_researcher_builder.add_node("final_report_generation", final_report_generat
 
 # Define main workflow edges for sequential execution
 deep_researcher_builder.add_edge(START, "clarify_with_user")                       # Entry point
+deep_researcher_builder.add_edge("clarify_with_user", "write_research_brief")      # Clarification to research brief (if no clarification needed)
 deep_researcher_builder.add_edge("research_supervisor", "final_report_generation") # Research to report
 deep_researcher_builder.add_edge("final_report_generation", END)                   # Final exit point
 
 # Compile the complete deep researcher workflow
-# deep_researcher = deep_researcher_builder.compile()
 deep_researcher = deep_researcher_builder.compile(
-    interrupt_after=["final_report_generation"]
+    interrupt_after=["final_report_generation"],
+    durability="sync"   # ⭐ THIS FIXES EVERYTHING
 )
