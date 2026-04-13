@@ -868,5 +868,4 @@ deep_researcher_builder.add_edge("final_report_generation", END)                
 # Compile the complete deep researcher workflow
 deep_researcher = deep_researcher_builder.compile(
     interrupt_after=["final_report_generation"],
-    durability="sync"   # ⭐ THIS FIXES EVERYTHING
 )
