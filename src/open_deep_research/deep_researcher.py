@@ -869,3 +869,6 @@ deep_researcher_builder.add_edge("final_report_generation", END)                
 deep_researcher = deep_researcher_builder.compile(
     interrupt_after=["final_report_generation"],
 )
+deep_researcher = deep_researcher.with_config({
+    "output_keys": ["final_report", "messages"]
+})
