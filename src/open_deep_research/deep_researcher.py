@@ -724,7 +724,7 @@ researcher_subgraph = researcher_builder.compile()
 #         ],
 #     }
 async def final_report_generation(state: AgentState, config: RunnableConfig):
-    """Generate the final comprehensive research report (FIXED VERSION)"""
+    """Generate the final comprehensive research report (FINAL FIXED VERSION)"""
 
     # ===============================
     # ✅ STEP 1: SAFE DATA EXTRACTION
@@ -733,7 +733,7 @@ async def final_report_generation(state: AgentState, config: RunnableConfig):
     messages = state.get("messages", [])
     research_brief = state.get("research_brief", "")
 
-    # 🔥 STRONG FALLBACK (CRITICAL FIX)
+    # 🔥 STRONG FALLBACK
     if notes:
         findings = "\n".join(notes)
     elif messages:
@@ -764,7 +764,7 @@ async def final_report_generation(state: AgentState, config: RunnableConfig):
 
     while current_retry <= max_retries:
         try:
-            # 🔥 STRONG PROMPT (CRITICAL FIX)
+            # 🔥 STRONG PROMPT
             final_report_prompt = f"""
 You are an expert AI researcher.
 
@@ -782,16 +782,19 @@ Write a detailed, well-structured, clear answer.
                 HumanMessage(content=final_report_prompt)
             ])
 
-            print("✅ FINAL REPORT:", final_report.content)
+            output_text = final_report.content or "No content generated"
 
+            print("✅ FINAL REPORT:", output_text)
+
+            # ===============================
+            # 🔥 FINAL RETURN (CRITICAL FIX)
+            # ===============================
             return {
-                "final_report": final_report.content,
+                "final_report": output_text,
                 "messages": [
-                    {
-                        "role": "assistant",
-                        "content": final_report.content
-                    }
+                    AIMessage(content=output_text)   # ✅ proper format
                 ],
+                "output": output_text   # ⭐ THIS FIXES YOUR ISSUE
             }
 
         except Exception as e:
@@ -806,10 +809,11 @@ Write a detailed, well-structured, clear answer.
 
                     if not model_token_limit:
                         return {
-                            "final_report": f"Token limit exceeded error: {e}",
+                            "final_report": f"Token limit exceeded: {e}",
                             "messages": [
-                                {"role": "assistant", "content": "Report generation failed"}
+                                AIMessage(content="Report generation failed")
                             ],
+                            "output": f"Token limit exceeded: {e}"
                         }
 
                     findings_token_limit = model_token_limit * 4
@@ -828,8 +832,9 @@ Write a detailed, well-structured, clear answer.
                 return {
                     "final_report": f"Error generating final report: {e}",
                     "messages": [
-                        {"role": "assistant", "content": "Report generation failed"}
+                        AIMessage(content="Report generation failed")
                     ],
+                    "output": f"Error generating final report: {e}"
                 }
 
     # ===============================
@@ -838,8 +843,9 @@ Write a detailed, well-structured, clear answer.
     return {
         "final_report": "Error generating final report: Maximum retries exceeded",
         "messages": [
-            {"role": "assistant", "content": "Report generation failed"}
+            AIMessage(content="Report generation failed")
         ],
+        "output": "Error generating final report: Maximum retries exceeded"
     }
 
 # Main Deep Researcher Graph Construction

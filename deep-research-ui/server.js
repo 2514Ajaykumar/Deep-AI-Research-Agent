@@ -27,12 +27,16 @@ if (!API_KEY) {
 
 let THREAD_ID = null;
 
-// ✅ Health
+// ===============================
+// ✅ HEALTH
+// ===============================
 app.get("/", (req, res) => {
   res.json({ status: "Proxy running 🚀" });
 });
 
-// ✅ Safe parser
+// ===============================
+// ✅ SAFE PARSER
+// ===============================
 const parseResponse = async (response) => {
   const text = await response.text();
   try {
@@ -77,7 +81,7 @@ app.post("/api/thread", async (req, res) => {
 });
 
 // ===============================
-// ✅ RUN QUERY
+// ✅ RUN QUERY (🔥 FIXED)
 // ===============================
 app.post("/api/run", async (req, res) => {
   try {
@@ -101,6 +105,8 @@ app.post("/api/run", async (req, res) => {
         body: JSON.stringify({
           assistant_id: ASSISTANT_ID,
           input: { query },
+
+          // 🔥 CRITICAL FIX (NO STREAMING)
         }),
       }
     );
@@ -121,7 +127,7 @@ app.post("/api/run", async (req, res) => {
 });
 
 // ===============================
-// ✅ GET RESULT (FINAL FIXED)
+// ✅ GET RESULT (FINAL FIX)
 // ===============================
 app.get("/api/run/:threadId/:runId", async (req, res) => {
   try {
@@ -145,36 +151,38 @@ app.get("/api/run/:threadId/:runId", async (req, res) => {
     if (data.status === "success") {
       console.log("✅ Run completed");
 
-      // ✅ CASE 1: New LangGraph output
-      if (data.output) {
+      // 🔥 PRIORITY ORDER (VERY IMPORTANT)
+
+      // 1️⃣ direct output
+      if (typeof data.output === "string") {
         finalOutput = data.output;
       }
 
-      // ✅ CASE 2: messages inside output
+      // 2️⃣ structured output
+      else if (data.output?.final_report) {
+        finalOutput = data.output.final_report;
+      }
+
+      // 3️⃣ messages inside output
       else if (data.output?.messages?.length > 0) {
         finalOutput =
           data.output.messages[data.output.messages.length - 1].content;
       }
 
-      // ✅ CASE 3: values.messages (older format)
+      // 4️⃣ values.messages (fallback)
       else if (data.values?.messages?.length > 0) {
         finalOutput =
           data.values.messages[data.values.messages.length - 1].content;
       }
 
-      // ✅ CASE 4: values.final_report
+      // 5️⃣ values.final_report
       else if (data.values?.final_report) {
         finalOutput = data.values.final_report;
       }
 
-      // ✅ CASE 5: fallback with query
-      else if (data.kwargs?.input?.query) {
-        finalOutput = `⚠️ Agent ran but returned no output.\n\nQuery: ${data.kwargs.input.query}`;
-      }
-
-      // ❌ FINAL fallback
+      // 6️⃣ fallback
       else {
-        finalOutput = "⚠️ No readable output from agent";
+        finalOutput = `⚠️ Agent executed but returned no visible output.\n\nDebug:\n${JSON.stringify(data, null, 2)}`;
       }
 
       console.log("📊 FINAL OUTPUT:", finalOutput);
