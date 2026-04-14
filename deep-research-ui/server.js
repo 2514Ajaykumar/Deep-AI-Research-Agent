@@ -134,7 +134,7 @@ app.get("/api/run/:threadId/:runId", async (req, res) => {
     const { threadId, runId } = req.params;
 
     const response = await fetch(
-      `${BASE_URL}/threads/${threadId}/runs/${runId}`,
+      `${BASE_URL}/threads/${threadId}/runs/${runId}/state`,
       {
         headers: {
           Authorization: `Bearer ${API_KEY}`,
